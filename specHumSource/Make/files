@@ -1,0 +1,4 @@
+
+specHumSource.C
+
+LIB = $(FOAM_USER_LIBBIN)/specHumSource

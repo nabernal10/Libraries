@@ -1,0 +1,18 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+# Parse arguments for library compilation
+. $WM_PROJECT_DIR/wmake/scripts/AllwmakeParseArguments
+
+
+wmake $targetType epsilonSource
+wmake $targetType ESource
+wmake $targetType Gleaf
+wmake $targetType kSource
+wmake $targetType specHumSource
+wmake $targetType Tleaf
+wmake $targetType USource
+wmake $targetType mychtMultiRegionSimpleFoam
+wmake $targetType myinsideCells
+wmake $targetType mybuoyantBoussinesqSimpleFoam
+#------------------------------------------------------------------------------

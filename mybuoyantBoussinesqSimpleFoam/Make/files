@@ -1,0 +1,5 @@
+mybuoyantBoussinesqSimpleFoam.C
+
+//EXE = $(FOAM_APPBIN)/buoyantBoussinesqSimpleFoam
+EXE = $(FOAM_USER_APPBIN)/mybuoyantBoussinesqSimpleFoam
+

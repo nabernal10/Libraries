@@ -1,0 +1,4 @@
+
+USource.C
+
+LIB = $(FOAM_USER_LIBBIN)/USource

@@ -1,0 +1,55 @@
+// Solve the specific humidity equation
+
+// Obtener referencias a los campos en `createFields.H`
+const volScalarField& LAD = mesh.lookupObject<volScalarField>("LAD");
+const volScalarField& rho = mesh.lookupObject<volScalarField>("rho");
+const volScalarField& T = mesh.lookupObject<volScalarField>("T");
+const volScalarField& TLeaf = mesh.lookupObject<volScalarField>("TLeaf");
+const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+const volScalarField& GLeaf = mesh.lookupObject<volScalarField>("GLeaf");
+
+// Definir las constantes relevantes
+dimensionedScalar Cp0("Cp0", dimSpecificHeatCapacity, 1003.5);  // Calor espec赤fico del aire [J/(kg K)]
+dimensionedScalar L("L", dimLength, 0.1);  // Tama?o caracter赤stico de la hoja [m]
+dimensionedScalar C("C", sqrt(dimTime)/dimLength, 130); // Factor de proporcionalidad [s^0.5/m]
+dimensionedScalar L_v("L_v", dimensionSet(0,2,-2,0,0,0,0), 2.5e+6);  // Calor latente de vaporizaci車n [J/kg]
+
+// Calcular la resistencia aerodin芍mica - r_a [s/m]
+const dimensionedScalar Umin(dimVelocity, 0.5);
+const dimensionedScalar Umax(dimVelocity, 1000);
+volScalarField Umag(mag(U));
+Umag.clip(Umin, Umax);
+volScalarField r_a = C * sqrt(L / Umag);
+
+// Coeficiente de transferencia de calor por convecci車nn - h_ch [W/(m^2 K)]
+volScalarField h_ch = (2.0 * rho * Cp0) / r_a;
+
+// Flujo de calor sensible desde la hoja - qPlantSen [W/m^3]
+volScalarField qPlantSen = h_ch * (TLeaf - T);
+
+// Flujo de calor latente desde la hoja - qPlantLat [W/m^3]
+volScalarField qPlantLat = GLeaf - qPlantSen;
+
+// Flujo de masa de vapor de agua de la hoja (modelo de transpiraci車n) - g_vLeaf [kg/(s m^2)]
+volScalarField g_vLeaf = qPlantLat / L_v;
+
+// T谷rmino fuente de la ecuaci車n de humedad espec赤fica - Sw [kg_waterVapourMass / (kg_dryAirMass s)]
+volScalarField Sw = LAD * g_vLeaf / rho;
+
+// Definir el t谷rmino fuente en la ecuaci車n de humedad espec赤fica
+fvScalarMatrix specHumEqn
+(                                                                                                                          
+    fvm::div(phi, specHum)                                                  
+  - fvm::laplacian(turbulence->muEff(), specHum)	
+ ==
+    Sw  // Aplicar el t谷rmino fuente directamente aqu赤
+);
+
+specHumEqn.relax(); 
+fvOptions.constrain(specHumEqn);
+specHumEqn.solve();   
+
+// Mensajes de depuraci車n
+Info << "?? Aplicando fvOptions.correct(specHum)" << endl;
+fvOptions.correct(specHum);
+Info << "? Se ejecut車 fvOptions.correct(specHum)" << endl;

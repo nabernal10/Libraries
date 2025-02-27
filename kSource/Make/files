@@ -1,0 +1,4 @@
+
+kSource.C
+
+LIB = $(FOAM_USER_LIBBIN)/kSource
