@@ -5,15 +5,15 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2019 OpenCFD Ltd.
-    Copyright (C) YEAR AUTHOR, AFFILIATION
+  Copyright (C) 2019-2023 OpenFOAM Foundation
+  Copyright (C) 2021-2023 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
     OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
@@ -35,37 +35,14 @@ License
 #include "fvMatrix.H"
 #include "fvm.H" 
 
-//{{{ begin codeInclude
-
-//}}} end codeInclude
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
 {
 namespace fv
 {
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-//{{{ begin localCode
-
-//}}} end localCode
-
-
-// * * * * * * * * * * * * * * * Global Functions  * * * * * * * * * * * * * //
-
-// dynamicCode:
-// SHA1 = e97fe6ced1b0ca40c9289d9da8b1add0a8482aa2
-//
-// unique function name that can be checked if the correct library version
-// has been loaded
-
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-defineTypeNameAndDebug(kSource, 0);
-addRemovableToRunTimeSelectionTable
+	defineTypeNameAndDebug(kSource, 0);
+	addRemovableToRunTimeSelectionTable
 (
     option,
     kSource,
@@ -75,8 +52,16 @@ addRemovableToRunTimeSelectionTable
 }
 }
 
+// * * * * * * * * * * * * * Constructors * * * * * * * * * * * * * //
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+/**
+ * Constructor: Initializes the kSource function object.
+ *
+ * @param name       Function object name.
+ * @param modelType  Type of model.
+ * @param dict       Dictionary with user-defined parameters.
+ * @param mesh       Mesh reference.
+ */
 
 Foam::fv::kSource::kSource
 (
@@ -88,41 +73,89 @@ Foam::fv::kSource::kSource
 )
 :
     fv::cellSetOption(name, modelType, dict, mesh),
-	C_d(0.7),
-    betaP_(1.0),
-	betaD_(5.1)
+	C_d_(0.0),  /**< Drag coefficient Cd - [-] */
+    betaP_(0.0), /**< Production coefficient βp - [-] */
+	betaD_(0.0)  /**< Dissipation coefficient βd - [-] */
 
 {
-    read(dict);           // <<-- Add
+    read(dict);
 }
 
+// * * * * * * * * * * * * * Destructor * * * * * * * * * * * * * //
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+/**
+ * Destructor: Destroys the kSource object.
+ */
 
 Foam::fv::kSource::~kSource()
 {
     Info << "Destructor: kSource" << endl;
 }
 
+// * * * * * * * * * * * * * Member Functions * * * * * * * * * * * * * //
 
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+/**
+ * Reads parameters from the dictionary.
+ *
+ * @param dict   Dictionary containing source term settings.
+ * @return True if data is read successfully, false otherwise.
+ */
+ 
 bool Foam::fv::kSource::read(const dictionary& dict)
 {
-	Info << " 🔴 access to kSource::read()" << endl;
+    Info << " 🔴 access to kSource::read()" << endl;
     if (!fv::cellSetOption::read(dict))
     {
-        return false;
+        Info << "return = false from read" << endl;
+		return false;
     }
-	
+
     coeffs_.readEntry("fields", fieldNames_);
     applied_.resize(fieldNames_.size(), false);
-
-	Info << " 🔴 return = true from read" << endl;
 	
+	Info << " 🔴 return = true from read" << endl;
+
+    // Extract the subdictionary leafProperties
+    IOdictionary leafDict
+    (
+        IOobject
+        (
+            "leafProperties",
+            this->mesh_.time().constant(),
+            mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    );
+
+    if (leafDict.found("leafProperties"))
+    {
+        const dictionary& gProps = leafDict.subDict("leafProperties");
+
+        gProps.readIfPresent("C_d", C_d_);
+        gProps.readIfPresent("betaP", betaP_);
+        gProps.readIfPresent("betaD", betaD_);
+
+        Info << "🔴 Values after reading leafProperties:\n"
+             << "C_d = " << C_d_ << "\n"
+             << "betaP = " << betaP_ << "\n"
+             << "betaD = " << betaD_ << "\n";
+    }
+    else
+    {
+        Info << "\n❌ Subdictionary 'leafProperties' not found in leafProperties.\n";
+    }
+
     return true;
 }
 
-
+/**
+ * Adds explicit source term to the turbulent kinetic energy (k) equation.
+ *
+ * @param rho     Density field.
+ * @param eqn     Turbulent kinetic energy equation matrix.
+ * @param fieldi  Index of the field.
+ */
 void Foam::fv::kSource::addSup
 (
     const volScalarField& rho,
@@ -131,40 +164,48 @@ void Foam::fv::kSource::addSup
 )
     {
         
-        Info << "🔴 kSource::addSup() aplicando fuente en el campo escalar k" << endl;
-        
-		// Obtener los campos requeridos
+        Info << "🔴 kSource::addSup() applying source in the scalar field k" << endl;
+
 		const volScalarField& k = eqn.psi();
         const volScalarField& rho_ = mesh_.lookupObject<volScalarField>("rho");
 		const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
 		const volScalarField& LAD = mesh_.lookupObject<volScalarField>("LAD");
 		
-		// Turbulent Kinetic Energy, TKE source term - Sk [W/m^3]*(1 / rho_)		
-		volScalarField Sk_production = rho_ * C_d * LAD * betaP_ * pow(mag(U), 3) * (1 / rho_);
+		// Turbulent Kinetic Energy, TKE source term - Sk [W/m³] * (1 / rho_)		
+		volScalarField Sk_production = rho_ * C_d_ * LAD * betaP_ * pow(mag(U), 3) * (1 / rho_);
 		
 		fvMatrix<scalar> Sk_dissipation
 		(
-			- fvm::Sp(rho_ * C_d * LAD * betaD_ * mag(U) * (1 / rho_), k)
+			- fvm::Sp(rho_ * C_d_ * LAD * betaD_ * mag(U) * (1 / rho_), k)
 		);
 		
 		fvMatrix<scalar> Sk
 		(
 			Sk_production + Sk_dissipation
 		);
-
+		
+		// Add source term to equation
 		eqn += Sk;
     }
 
-void Foam::fv::kSource::addSup //(Para que fvOptions detecte kSource)
+/**
+ * Adds explicit contribution for incompressible flow (needed for fvOptions).
+ *
+ * @param eqn     Turbulent kinetic energy equation matrix.
+ * @param fieldi  Index of the field.
+ */
+void Foam::fv::kSource::addSup
 (
     fvMatrix<scalar>& eqn,
     const label fieldi
 )
+
+/**
+ * Writes the kSource field to a file.
+ *
+ * @return True if the write operation is successful.
+ */
 {
     return this->addSup(volScalarField::null(), eqn, fieldi);
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-
-// ************************************************************************* //
-

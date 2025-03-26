@@ -1,4 +1,4 @@
-Info<< "📌 Reading thermophysical properties (Document: createFields.H) \n" << endl;
+Info<< "📌 Reading thermophysical properties (from createFields.H) \n" << endl;
 
 Info<< "Reading field T\n" << endl;
 volScalarField T
@@ -221,5 +221,5 @@ mesh.setFluxRequired(p_rgh.name());
 #include "createMRF.H"
 #include "createIncompressibleRadiationModel.H"
 //#include "createFvOptions.H"   // Este archivo no existe por lo que se debe agregar lo siguiente para garantizar que fvOptions se cree correctamente dentro del solver.
-Info<< "📌 Creando fvOptions... (mensaje desde createFields.H)" << endl;
+Info<< "📌 Creando fvOptions... (from createFields.H)" << endl;
 fv::options fvOptions(mesh); // Agregar esta línea para inicializar fvOptions manualmente

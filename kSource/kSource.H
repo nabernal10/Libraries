@@ -1,101 +1,71 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | www.openfoam.com
+   \\    /   O peration     | www.openfoam.com
+    \\  /    A nd           |
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2019 OpenCFD Ltd.
-    Copyright (C) YEAR AUTHOR, AFFILIATION
+  Copyright (C) 2019-2023 OpenFOAM Foundation
+  Copyright (C) 2021-2023 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-    for more details.
+    OpenFOAM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with OpenFOAM. If not, see <http://www.gnu.org/licenses/>.
 
-Description
-    Template for use with dynamic code generation of a source.
-    The hook functions take the following arguments:
+\*---------------------------------------------------------------------------*/
 
-    \verbatim
-    codeCorrect
-    (
-        GeometricField<Type, fvPatchField, volMesh>& fld
-    )
+/*---------------------------------------------------------------------------*\
+    Class: Foam::fv::kSource
 
-    codeAddSup
-    (
-        fvMatrix<Type}>& eqn,
-        const label fieldi
-    )
+    Description:
+        Adds a source term to the turbulence kinetic energy equation (k).
+        The source term is defined based on user-defined coefficients.
 
-    codeConstrain
-    (
-        fvMatrix<Type>& eqn,
-        const label fieldi
-    )
-    \endverbatim
-
-    where :
-        fieldi is the index in the fields entry
-        eqn is the fvMatrix
-
-    \verbatim
-    energySource
-    {
-        type            scalarCodedSource;
-
-        active          true;
-        selectionMode   all;
-
-        scalarCodedSourceCoeffs
+    Usage:
+        To use this function object in `system/controlDict.functions`:
+        \verbatim
+        kSource1
         {
-            fields  (h);
-            name    sourceTime;
+            type            kSource;
+            active          yes;
 
-            codeInclude
-            #{
-            #};
-
-            codeCorrect
-            #{
-                Pout<< "**codeCorrect**" << endl;
-            #};
-
-            codeAddSup
-            #{
-                const Time& time = mesh().time();
-                const scalarField& V = mesh_.V();
-                scalarField& heSource = eqn.source();
-                heSource -= 0.1*sqr(time.value())*V;
-            #};
-
-            codeConstrain
-            #{
-                Pout<< "**codeConstrain**" << endl;
-            #};
+            kSourceCoeffs
+            {
+                fields      (k);
+                C_d         ...;    // Drag coefficient [-]
+                betaP       ...;    // Production coefficient [-]
+                betaD       ...;    // Dissipation coefficient [-]
+            }
         }
+        \endverbatim
 
-        sourceTimeCoeffs
-        {
-            // Dummy entry
-        }
-    }
-    \endverbatim
+    Property Table:
+    | Property   | Description                                | Type   | Required |
+    |------------|--------------------------------------------|--------|----------|
+    | type       | Type name: kSource                         | word   | Yes      |
+    | fields     | Fields to apply the source term            | list   | Yes      |
+    | C_d        | Drag coefficient                           | scalar | No       |
+    | betaP      | Production coefficient                     | scalar | No       |
+    | betaD      | Dissipation coefficient                    | scalar | No       |
+    | active     | Whether the source term is active          | bool   | Yes      |
 
-SourceFiles
-    kSource.C
+    See also:
+        - \link cellSetOption.H \endlink
+
+    SourceFiles:
+        kSource.C
 
 \*---------------------------------------------------------------------------*/
 
@@ -112,21 +82,25 @@ namespace fv
 {
 
 /*---------------------------------------------------------------------------*\
-                         A templated CodedFvOption
+                           Class kSource Declaration
 \*---------------------------------------------------------------------------*/
 
 class kSource
 :
     public cellSetOption
 {
-    // Private Data
-		// Cofficients
-		scalar C_d;
-        scalar betaP_;
-	    scalar betaD_;
-	// Private Member Functions
+	// Private Data
 
-        
+		/** Drag coefficient [-] */
+		scalar C_d_;
+
+		/** Production coefficient [-] */
+		scalar betaP_;
+
+		/** Dissipation coefficient [-] */
+		scalar betaD_;
+
+    // Private Member Functions  
 
 public:
 
@@ -137,7 +111,14 @@ public:
 
     // Constructors
 
-        //- Construct from patch and internal field
+    /**
+     * Constructor: Initializes the kSource object.
+     *
+     * @param name       Name of the source term.
+     * @param modelType  Type of model.
+     * @param dict       Dictionary containing model parameters.
+     * @param mesh       Mesh reference.
+     */
         kSource
         (
             const word& name,
@@ -152,10 +133,21 @@ public:
 
     // Member Functions
 
-        //- Read the data needed for the source calculation
+    /**
+     * Read data from dictionary.
+     *
+     * @param dict  Dictionary containing source term settings.
+     * @return True if data is read successfully, false otherwise.
+     */
         virtual bool read(const dictionary&);
 		
-        //- Explicit/implicit matrix contributions
+    /**
+     * Add explicit source term to the turbulence kinetic energy equation (k).
+     *
+     * @param rho     Density field.
+     * @param eqn     Momentum equation matrix.
+     * @param fieldi  Index of the field.
+     */
         virtual void addSup
         (
             const volScalarField& rho,
@@ -163,7 +155,12 @@ public:
             const label fieldi
         );
 		
-		//- Agregar contribución explícita para flujo incompresible (necesario para fvOptions)
+    /**
+     * Add explicit contribution to the incompressible equation.
+     *
+     * @param eqn     Turbulence kinetic energy equation.
+     * @param fieldi  Index of the field.
+     */
         virtual void addSup
         (
             fvMatrix<scalar>& eqn,
@@ -182,4 +179,3 @@ public:
 #endif
 
 // ************************************************************************* //
-

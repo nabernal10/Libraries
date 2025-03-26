@@ -1,101 +1,74 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | www.openfoam.com
+   \\    /   O peration     | www.openfoam.com
+    \\  /    A nd           |
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2019 OpenCFD Ltd.
-    Copyright (C) YEAR AUTHOR, AFFILIATION
+  Copyright (C) 2019-2023 OpenFOAM Foundation
+  Copyright (C) 2021-2023 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-    for more details.
+    OpenFOAM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with OpenFOAM. If not, see <http://www.gnu.org/licenses/>.
 
-Description
-    Template for use with dynamic code generation of a source.
-    The hook functions take the following arguments:
+\*---------------------------------------------------------------------------*/
 
-    \verbatim
-    codeCorrect
-    (
-        GeometricField<Type, fvPatchField, volMesh>& fld
-    )
+/*---------------------------------------------------------------------------*\
+    Class: Foam::fv::specHumSource
 
-    codeAddSup
-    (
-        fvMatrix<Type}>& eqn,
-        const label fieldi
-    )
+    Description:
+        Computes a source term contribution to the specific humidity equation.
+        The source term is defined by user-provided coefficients and
+        added explicitly to the specific humidity equation.
 
-    codeConstrain
-    (
-        fvMatrix<Type>& eqn,
-        const label fieldi
-    )
-    \endverbatim
-
-    where :
-        fieldi is the index in the fields entry
-        eqn is the fvMatrix
-
-    \verbatim
-    energySource
-    {
-        type            scalarCodedSource;
-
-        active          true;
-        selectionMode   all;
-
-        scalarCodedSourceCoeffs
+    Usage:
+        To use this function object in `system/controlDict.functions`:
+        \verbatim
+        specHumSource1
         {
-            fields  (h);
-            name    sourceTime;
+            type            specHumSource;
+            active          yes;
 
-            codeInclude
-            #{
-            #};
-
-            codeCorrect
-            #{
-                Pout<< "**codeCorrect**" << endl;
-            #};
-
-            codeAddSup
-            #{
-                const Time& time = mesh().time();
-                const scalarField& V = mesh_.V();
-                scalarField& hspecHumSource = eqn.source();
-                hspecHumSource -= 0.1*sqr(time.value())*V;
-            #};
-
-            codeConstrain
-            #{
-                Pout<< "**codeConstrain**" << endl;
-            #};
+            specHumSourceCoeffs
+            {
+                fields      (q);
+                Cp0         ...;    // Specific heat capacity [J/(kg·K)]
+                L           ...;    // Characteristic leaf size [m]
+                C           ...;    // Proportionality factor [sqrt(s)/m]
+                L_v         ...;    // Latent heat of vaporization [J/kg]
+            }
         }
+        \endverbatim
 
-        sourceTimeCoeffs
-        {
-            // Dummy entry
-        }
-    }
-    \endverbatim
+    Property Table:
+    | Property   | Description                                | Type   | Required |
+    |------------|--------------------------------------------|--------|----------|
+    | type       | Type name: specHumSource                   | word   | Yes      |
+    | fields     | Fields to apply the source term            | list   | Yes      |
+    | Cp0        | Specific heat capacity                     | scalar | No       |
+    | L          | Characteristic length                      | scalar | No       |
+    | C          | Proportionality factor                     | scalar | No       |
+    | L_v        | Latent heat of vaporization                | scalar | No       |
+    | active     | Whether the source term is active          | bool   | Yes      |
 
-SourceFiles
-    specHumSource.C
+    See also:
+        - \link cellSetOption.H \endlink
+
+    SourceFiles:
+        specHumSource.C
 
 \*---------------------------------------------------------------------------*/
 
@@ -111,8 +84,9 @@ namespace Foam
 namespace fv
 {
 
+
 /*---------------------------------------------------------------------------*\
-                         A templated CodedFvOption
+                           Class specHumSource Declaration
 \*---------------------------------------------------------------------------*/
 
 class specHumSource
@@ -120,13 +94,20 @@ class specHumSource
     public cellSetOption
 {
     // Private Data
-		// Cofficients
-		dimensionedScalar Cp0_;
-		dimensionedScalar L_;
-		dimensionedScalar C_;
-		dimensionedScalar L_v_;
-	// Private Member Functions
 
+    /** Specific heat capacity [J/(kg·K)] */
+    dimensionedScalar Cp0_;
+
+    /** Characteristic length [m] */
+    dimensionedScalar L_;
+
+    /** Proportionality factor [sqrt(s)/m] */
+    dimensionedScalar C_;
+
+    /** Latent heat of vaporization [J/kg] */
+    dimensionedScalar L_v_;
+
+    // Private Member Functions
         
 
 public:
@@ -138,7 +119,14 @@ public:
 
     // Constructors
 
-        //- Construct from patch and internal field
+    /**
+     * Constructor: Initializes the specHumSource object.
+     *
+     * @param name       Name of the source term.
+     * @param modelType  Type of model.
+     * @param dict       Dictionary containing model parameters.
+     * @param mesh       Mesh reference.
+     */
         specHumSource
         (
             const word& name,
@@ -153,10 +141,21 @@ public:
 
     // Member Functions
 
-        //- Read the data needed for the source calculation
+    /**
+     * Read data from dictionary.
+     *
+     * @param dict  Dictionary containing source term settings.
+     * @return True if data is read successfully, false otherwise.
+     */
         virtual bool read(const dictionary&);
 		
-        //- Explicit/implicit matrix contributions
+    /**
+     * Add explicit source term to the specific humidity equation.
+     *
+     * @param rho     Density field.
+     * @param eqn     Specific humidity equation matrix.
+     * @param fieldi  Index of the field.
+     */
         virtual void addSup
         (
             const volScalarField& rho,
@@ -164,7 +163,12 @@ public:
             const label fieldi
         );
 		
-		//- Agregar contribución explícita para flujo incompresible (necesario para fvOptions)
+    /**
+     * Add explicit contribution to the incompressible equation.
+     *
+     * @param eqn     Specific humidity equation matrix.
+     * @param fieldi  Index of the field.
+     */
         virtual void addSup
         (
             fvMatrix<scalar>& eqn,
@@ -183,4 +187,3 @@ public:
 #endif
 
 // ************************************************************************* //
-
