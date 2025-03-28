@@ -242,6 +242,18 @@ bool Foam::functionObjects::TLeaf::execute()
         )
     );
     volScalarField& r_aW = tr_aW.ref();
+	
+	/** qPlantLat output field [W/m²] */
+    tmp<volScalarField> tqPlantLat
+    (
+        volScalarField::New
+        (
+            "qPlantLat",
+            T.mesh(),
+            dimPower/sqr(dimLength)
+        )
+    );
+    volScalarField& qPlantLat = tqPlantLat.ref();
 
 	/** Stefan-Boltzmann constant - σ [W/(m²·K⁴)] */
     const dimensionedScalar StefanBoltzmann
@@ -264,7 +276,7 @@ bool Foam::functionObjects::TLeaf::execute()
 		Info<< "\n¡¡¡¡NEW TLeaf ITERATION!!!!\n" << endl;
         /** Net radiative flux - qPlantRad [W/m²] */
         volScalarField qPlantRad = GLeaf;
-		Info << "Current qPlantRad [W/m²]: min = " << min(qPlantRad).value() << ", max = " << max(qPlantRad).value() << endl;
+		Info << "Current qPlantRad [W/m²]: min = " << min(qPlantRad).value() << ", max = " << max(qPlantRad).value() << ", mean: " << average(qPlantRad).value() << endl;
 			
 		
 		/** Saturation vapour pressure at air (Tetens equation) - pVSatAir [Pa] */
@@ -274,25 +286,25 @@ bool Foam::functionObjects::TLeaf::execute()
 		const dimensionedScalar E(dimless, 610.78); // Saturation vapor pressure at 0°C [Pa]
 		volScalarField pVSatAir = pressureUnit * E * exp((A * (T - B)) / ((T - B) + C));
 		volScalarField T_C = T - B;
-		Info << "Current T [K]: min = " << min(T).value() << ", max = " << max(T).value() << endl;
-		Info << "Current T [°C]: min = " << min(T_C).value() << ", max = " << max(T_C).value() << endl;
-		Info << "Current pVSatAir [Pa]: min = " << min(pVSatAir).value() << ", max = " << max(pVSatAir).value() << endl;
+		Info << "Current T [K]: min = " << min(T).value() << ", max = " << max(T).value() << ", mean: " << average(T).value() << endl;
+		Info << "Current T [°C]: min = " << min(T_C).value() << ", max = " << max(T_C).value() << ", mean: " << average(T_C).value() << endl;
+		Info << "Current pVSatAir [Pa]: min = " << min(pVSatAir).value() << ", max = " << max(pVSatAir).value() << ", mean: " << average(pVSatAir).value() << endl;
 
 		
 		/** Partial vapour pressure at air - pVAir [Pa] */
 		const dimensionedScalar pF(dimDensity, 1); //Pressure unit adjustment factor
 		volScalarField pVAir = w * (p * pF) / ((R_a_ / R_v_) + w);		
-		Info << "Current pVAir [Pa]: min = " << min(pVAir).value() << ", max = " << max(pVAir).value() << endl;
-		Info << "Current p [Pa]: min = " << min(p).value() << ", max = " << max(p).value() << endl;
-		Info << "Current w [kg/kg]: min = " << min(w).value() << ", max = " << max(w).value() << endl;
+		Info << "Current pVAir [Pa]: min = " << min(pVAir).value() << ", max = " << max(pVAir).value() << ", mean: " << average(pVAir).value() << endl;
+		Info << "Current p [Pa]: min = " << min(p).value() << ", max = " << max(p).value() << ", mean: " << average(p).value() << endl;
+		Info << "Current w [kg/kg]: min = " << min(w).value() << ", max = " << max(w).value() << ", mean: " << average(w).value() << endl;
 
 
         /** Saturation vapour pressure at leaf temperature - pVLeaf ≈ pVSatLeaf [Pa] */
         volScalarField pVSatLeaf = pressureUnit * E * exp((A * (TLeaf - B)) / ((TLeaf - B) + C)); // The vapour pressure at the leaf is the vapour pressure within the leaf stomata which is close to the saturation vapour pressure at the leaf temperature,
 		volScalarField TLeaf_C = TLeaf - B;
-		Info << "Current TLeaf [K]: min = " << min(TLeaf).value() << ", max = " << max(TLeaf).value() << endl;
-		Info << "Current TLeaf [°C]: min = " << min(TLeaf_C).value() << ", max = " << max(TLeaf_C).value() << endl;
-		Info << "Current pVSatLeaf [Pa]: min = " << min(pVSatLeaf).value() << ", max = " << max(pVSatLeaf).value() << endl;
+		Info << "Current TLeaf [K]: min = " << min(TLeaf).value() << ", max = " << max(TLeaf).value() << ", mean: " << average(TLeaf).value() << endl;
+		Info << "Current TLeaf [°C]: min = " << min(TLeaf_C).value() << ", max = " << max(TLeaf_C).value() << ", mean: " << average(TLeaf_C).value() << endl;
+		Info << "Current pVSatLeaf [Pa]: min = " << min(pVSatLeaf).value() << ", max = " << max(pVSatLeaf).value() << ", mean: " << average(pVSatLeaf).value() << endl;
 
 
 		/** Boundary layer conductance - gₐW [m/s] */
@@ -305,8 +317,8 @@ bool Foam::functionObjects::TLeaf::execute()
 		
 		/** Boundary layer resistance - rₐw [s/m] */
         r_aW = 1 / g_aW;
-		Info << "Current mag(U) [m/s]: min = " << min(mag(U)).value() << ", max = " << max(mag(U)).value() << endl;
-		Info << "Current r_aW [s/m]: min = " << min(r_aW).value() << ", max = " << max(r_aW).value() << endl;		
+		Info << "Current mag(U) [m/s]: min = " << min(mag(U)).value() << ", max = " << max(mag(U)).value() << ", mean: " << average(mag(U)).value() << endl;
+		Info << "Current r_aW [s/m]: min = " << min(r_aW).value() << ", max = " << max(r_aW).value() << ", mean: " << average(r_aW).value() << endl;		
 		
 		
         /** Stomatal resistance [rₛW = rₛ,Min * f₁(G₀) * f₂(D)] - rₛ [s/m] */
@@ -315,33 +327,33 @@ bool Foam::functionObjects::TLeaf::execute()
         const dimensionedScalar a_3(dimless/sqr(dimPressure), 0.005); // [1/kPa²]
 		const dimensionedScalar D0(dimPressure, 1.2); // [kPa]        
 		volScalarField D = (pVSatAir - pVAir) / 1000; // Vapor pressure deficit [kPa]				
-        r_sW = r_sMin_ * (a_1 + qr_sw) / (a_2 + qr_sw) * (1 + a_3 * sqr(D - D0));		
+        r_sW = r_sMin_ * (a_1 + qr_sw) / (a_2 + qr_sw) * (1 + a_3 * sqr(D - D0));
         //r_sW = r_aW * 0 + r_sMin_;
-		Info << "Current r_sW [s/m]: min = " << min(r_sW).value() << ", max = " << max(r_sW).value() << endl;
-		Info << "Current D [kPa]: min = " << min(D).value() << ", max = " << max(D).value() << endl;
+		Info << "Current r_sW [s/m]: min = " << min(r_sW).value() << ", max = " << max(r_sW).value() << ", mean: " << average(r_sW).value() << endl;
+		Info << "Current D [kPa]: min = " << min(D).value() << ", max = " << max(D).value() << ", mean: " << average(D).value() << endl;
 		
 
 		/** Convective mass transfer coefficient - hcₘ [s/m] */
 		volScalarField h_cm = (1 / (r_aW + r_sW)) * (R_a_ / R_v_) * (rho / (p * pF));
-		Info << "Current h_cm [s/m]: min = " << min(h_cm).value() << ", max = " << max(h_cm).value() << endl;
-		Info << "Current rho [kg/m³]: min = " << min(rho).value() << ", max = " << max(rho).value() << endl;
+		Info << "Current h_cm [s/m]: min = " << min(h_cm).value() << ", max = " << max(h_cm).value() << ", mean: " << average(h_cm).value() << endl;
+		Info << "Current rho [kg/m³]: min = " << min(rho).value() << ", max = " << max(rho).value() << ", mean: " << average(rho).value() << endl;
 		
 		
         /** Vapour mass flux from the leaf (TRANSPIRATION MODEL) - gvLeaf [kg/(s·m²)] */
 		volScalarField g_vLeaf = h_cm * (pVSatLeaf - pVAir);
 		g_vLeaf_mg = g_vLeaf * 1000;
-		Info << "Current g_vLeaf [kg/(s·m²)] (transpiration): min = " << min(g_vLeaf).value() << ", max = " << max(g_vLeaf).value() << endl;
-		Info << "Current g_vLeaf [mg/(s·m²)] (transpiration): min = " << min(g_vLeaf_mg).value() << ", max = " << max(g_vLeaf_mg).value() << endl;
+		Info << "Current g_vLeaf [kg/(s·m²)] (transpiration): min = " << min(g_vLeaf).value() << ", max = " << max(g_vLeaf).value() << ", mean: " << average(g_vLeaf).value() << endl;
+		Info << "Current g_vLeaf [mg/(s·m²)] (transpiration): min = " << min(g_vLeaf_mg).value() << ", max = " << max(g_vLeaf_mg).value() << ", mean: " << average(g_vLeaf_mg).value() << endl;
 		
 		
 		/** Latent heat flux from the leaf - qPlantLat [W/m²] */
-        volScalarField qPlantLat = L_v_ * g_vLeaf;
-		Info << "Current qPlantLat [W/m²]: min = " << min(qPlantLat).value() << ", max = " << max(qPlantLat).value() << endl;
+        qPlantLat = L_v_ * g_vLeaf;
+		Info << "Current qPlantLat [W/m²]: min = " << min(qPlantLat).value() << ", max = " << max(qPlantLat).value() << ", mean: " << average(qPlantLat).value() << endl;
         
 		
 		/** Convective heat transfer coefficient - hcₕ [W/(m²·K)] */
 		volScalarField h_ch = (2 * rho * Cp0_ ) / r_aW;
-		Info << "Current h_ch [W/(m²·K)]: min = " << min(h_ch).value() << ", max = " << max(h_ch).value() << endl;
+		Info << "Current h_ch [W/(m²·K)]: min = " << min(h_ch).value() << ", max = " << max(h_ch).value() << ", mean: " << average(h_ch).value() << endl;
 		
 		
 		/** ✅ Leaf energy balance equation - TLeaf [K] */
@@ -368,8 +380,9 @@ bool Foam::functionObjects::TLeaf::execute()
 	Foam::word fieldNameg_vLeaf_mg("g_vLeaf");
 	Foam::word fieldNamer_s("r_s");
 	Foam::word fieldNamer_a("r_a");
+	Foam::word fieldNameqPlantLat("qPlantLat");
 
-    return store(fieldNameTLeaf, tTLeaf) && store(fieldNameg_vLeaf_mg, tg_vLeaf_mg) && store(fieldNamer_s, tr_sW) && store(fieldNamer_a, tr_aW);
+    return store(fieldNameTLeaf, tTLeaf) && store(fieldNameg_vLeaf_mg, tg_vLeaf_mg) && store(fieldNamer_s, tr_sW) && store(fieldNamer_a, tr_aW) && store(fieldNameqPlantLat, tqPlantLat);
 }
 
 /**
@@ -379,7 +392,7 @@ bool Foam::functionObjects::TLeaf::execute()
  */ 
 bool Foam::functionObjects::TLeaf::write()
 {
-    return writeObject("TLeaf") && writeObject("g_vLeaf") && writeObject("r_s") && writeObject("r_a");
+    return writeObject("TLeaf") && writeObject("g_vLeaf") && writeObject("r_s") && writeObject("r_a") && writeObject("qPlantLat");
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -253,38 +253,38 @@ bool Foam::functionObjects::GLeaf::execute()
 	/** Transmittance coefficient through the canopy - τ [-] */
 	volScalarField y = mesh_.C().component(1);
 	volScalarField tao = exp(- kappaLeaf_SW_ * LAD * (H_ - y));
-	Info << "Current tao: min = " << min(tao).value() << ", max = " << max(tao).value() << endl;
+	Info << "Current tao: min = " << min(tao).value() << ", max = " << max(tao).value() << ", mean: " << average(tao).value() << endl;
 
 	/** Transmitted shortwave radiation (Beer-Lambert law) - Rsₜ [W/m²] */
 	volScalarField Rs_transmitted_M1 = G_ * tao;
-	Info << "Current Rs_transmitted_M1 [W/m²]: min = " << min(Rs_transmitted_M1).value() << ", max = " << max(Rs_transmitted_M1).value() << endl;
+	Info << "Current Rs_transmitted_M1 [W/m²]: min = " << min(Rs_transmitted_M1).value() << ", max = " << max(Rs_transmitted_M1).value() << ", mean: " << average(Rs_transmitted_M1).value() << endl;
 	
 	/** Reflected shortwave radiation - Rsᵣ [W/m²] */
     volScalarField Rs_reflected_M1 = Rs_transmitted_M1 * rhoLeaf_;
-	Info << "Current Rs_reflected_M1 [W/m²]: min = " << min(Rs_reflected_M1).value() << ", max = " << max(Rs_reflected_M1).value() << endl;
+	Info << "Current Rs_reflected_M1 [W/m²]: min = " << min(Rs_reflected_M1).value() << ", max = " << max(Rs_reflected_M1).value() << ", mean: " << average(Rs_reflected_M1).value() << endl;
 	
     /** Absorbed sky longwave radiation - RLₐ_sky [W/m²] */
     volScalarField T_sky = T - dimensionedScalar("offset", dimensionSet(0,0,0,1,0), 15.0);
 	volScalarField RL_absorbed_Sky_M1 = C_lw_ * epsilonSky_ * StefanBoltzmann * pow(T_sky, 4);
 	const dimensionedScalar RL_validation(dimPower/sqr(dimLength), 525);
 	dimensionedScalar RL_absorbed_Sky_validation = C_lw_ * RL_validation;
-	Info << "Current RL_absorbed_Sky_M1 [W/m²]: min = " << min(RL_absorbed_Sky_M1).value() << ", max = " << max(RL_absorbed_Sky_M1).value() << endl;
+	Info << "Current RL_absorbed_Sky_M1 [W/m²]: min = " << min(RL_absorbed_Sky_M1).value() << ", max = " << max(RL_absorbed_Sky_M1).value() << ", mean: " << average(RL_absorbed_Sky_M1).value() << endl;
 	Info << "Current RL_absorbed_Sky_validation [W/m²] = " << RL_absorbed_Sky_validation.value() << endl;
 	
     /** Density of net radiation - Ga [W/m³] */
 	volScalarField Ga_M1 = kappaLeaf_SW_ * LAD * (Rs_transmitted_M1 - Rs_reflected_M1) + RL_absorbed_Sky_M1 / (H_ - h_);
 	volScalarField Ga_validation = kappaLeaf_SW_ * LAD * (Rs_transmitted_M1 - Rs_reflected_M1) + RL_absorbed_Sky_validation / (H_ - h_);
-	Info << "Current Ga_M1 [W/m³]: min = " << min(Ga_M1).value() << ", max = " << max(Ga_M1).value() << endl;
-	Info << "Current Ga_validation [W/m³]: min = " << min(Ga_validation).value() << ", max = " << max(Ga_validation).value() << endl;
+	Info << "Current Ga_M1 [W/m³]: min = " << min(Ga_M1).value() << ", max = " << max(Ga_M1).value() << ", mean: " << average(Ga_M1).value() << endl;
+	Info << "Current Ga_validation [W/m³]: min = " << min(Ga_validation).value() << ", max = " << max(Ga_validation).value() << ", mean: " << average(Ga_validation).value() << endl;
 	
 	/** Net radiative flux at the leaf surface [W/m²] */
 	const dimensionedScalar LAD_0("LAD_0", dimensionSet(0,-1,0,0,0,0,0), 8.77);
 	volScalarField q_rad = Rs_transmitted_M1 + RL_absorbed_Sky_validation;
 	volScalarField q_rad_M1_verify = Ga_M1 / LAD_0;
 	volScalarField q_rad_validation_verify = Ga_validation / LAD_0;
-	Info << "Current q_rad [W/m²]: min = " << min(q_rad).value() << ", max = " << max(q_rad).value() << endl;
-	Info << "Current q_rad_M1_verify [W/m²]: min = " << min(q_rad_M1_verify).value() << ", max = " << max(q_rad_M1_verify).value() << endl;
-	Info << "Current q_rad_validation_verify [W/m²]: min = " << min(q_rad_validation_verify).value() << ", max = " << max(q_rad_validation_verify).value() << endl;
+	Info << "Current q_rad [W/m²]: min = " << min(q_rad).value() << ", max = " << max(q_rad).value() << ", mean: " << average(q_rad).value() << endl;
+	Info << "Current q_rad_M1_verify [W/m²]: min = " << min(q_rad_M1_verify).value() << ", max = " << max(q_rad_M1_verify).value() << ", mean: " << average(q_rad_M1_verify).value() << endl;
+	Info << "Current q_rad_validation_verify [W/m²]: min = " << min(q_rad_validation_verify).value() << ", max = " << max(q_rad_validation_verify).value() << ", mean: " << average(q_rad_validation_verify).value() << endl;
 		
 	volScalarField q_rad_M1
 	(
@@ -315,8 +315,8 @@ bool Foam::functionObjects::GLeaf::execute()
 		}
 	}
 	
-	Info << "Current q_rad_M1 [W/m²]: min = " << min(q_rad_M1).value() << ", max = " << max(q_rad_M1).value() << endl;
-	Info << "Current q_rad_validation [W/m²]: min = " << min(q_rad_validation).value() << ", max = " << max(q_rad_validation).value() << endl;
+	Info << "Current q_rad_M1 [W/m²]: min = " << min(q_rad_M1).value() << ", max = " << max(q_rad_M1).value() << ", mean: " << average(q_rad_M1).value() << endl;
+	Info << "Current q_rad_validation [W/m²]: min = " << min(q_rad_validation).value() << ", max = " << max(q_rad_validation).value() << ", mean: " << average(q_rad_validation).value() << endl;
 	
 	
 	Info<< "\nRADIATION MODEL 2\n" << endl;
@@ -332,58 +332,57 @@ bool Foam::functionObjects::GLeaf::execute()
 	
     /** Absorbed sky longwave radiation - RLₐ_sky [W/m²] */
 	volScalarField RL_absorbed_Sky_M2 = epsilonSky_ * StefanBoltzmann * pow(T_sky, 4);
-	Info << "Current RL_absorbed_Sky_M2 [W/m²]: min = " << min(RL_absorbed_Sky_M2).value() << ", max = " << max(RL_absorbed_Sky_M2).value() << endl;
+	Info << "Current RL_absorbed_Sky_M2 [W/m²]: min = " << min(RL_absorbed_Sky_M2).value() << ", max = " << max(RL_absorbed_Sky_M2).value() << ", mean: " << average(RL_absorbed_Sky_M2).value() << endl;
 	
 	/** Emitted longwave radiation - RLₒ [W/m²] */
     volScalarField RL_emitted_M2 = epsilonLeaf_ * StefanBoltzmann * pow(TLeaf, 4);
-	Info << "Current RL_emitted_M2 [W/m²]: min = " << min(RL_emitted_M2).value() << ", max = " << max(RL_emitted_M2).value() << endl;
+	Info << "Current RL_emitted_M2 [W/m²]: min = " << min(RL_emitted_M2).value() << ", max = " << max(RL_emitted_M2).value() << ", mean: " << average(RL_emitted_M2).value() << endl;
 	
 	/** Net radiation - Rₙ [W/m²] */
     volScalarField R_n = G_ - Rs_transmitted_M2 - Rs_reflected_M2 + RL_absorbed_Sky_M2 - RL_emitted_M2;
-	Info << "Current R_n: min [W/m²] = " << min(R_n).value() << ", max = " << max(R_n).value() << endl;
+	Info << "Current R_n: min [W/m²] = " << min(R_n).value() << ", max = " << max(R_n).value() << ", mean: " << average(R_n).value() << endl;
 
     /** Isothermal net radiation - Rₙᵢ [W/m²] */
     volScalarField R_ni = R_n + (epsilonLeaf_ * StefanBoltzmann * (pow(TLeaf, 4) - pow(T, 4)));
-	Info << "Current R_ni [W/m²]: min = " << min(R_ni).value() << ", max = " << max(R_ni).value() << endl;
+	Info << "Current R_ni [W/m²]: min = " << min(R_ni).value() << ", max = " << max(R_ni).value() << ", mean: " << average(R_ni).value() << endl;
 
     /** Radiative heat transfer conductance - gR [m/s] */
     volScalarField g_R = 4 * epsilonLeaf_ * StefanBoltzmann * pow(T, 3) / (rho_ * Cp0_);
-	Info << "Current g_R [m/s]: min = " << min(g_R).value() << ", max = " << max(g_R).value() << endl;
+	Info << "Current g_R [m/s]: min = " << min(g_R).value() << ", max = " << max(g_R).value() << ", mean: " << average(g_R).value() << endl;
 
     /** Radiative heat transfer resistance - rR [s/m] */
     volScalarField r_R = 1 / g_R;
-	Info << "Current r_R [s/m]: min = " << min(r_R).value() << ", max = " << max(r_R).value() << endl;
+	Info << "Current r_R [s/m]: min = " << min(r_R).value() << ", max = " << max(r_R).value() << ", mean: " << average(r_R).value() << endl;
 
     /** Sensible heat loss - H_l [W/m²] */
     volScalarField H_l = rho_ * Cp0_ * (TLeaf - T) / r_R;
-	Info << "Current H [W/m²]: min = " << min(H_l).value() << ", max = " << max(H_l).value() << endl;
+	Info << "Current H [W/m²]: min = " << min(H_l).value() << ", max = " << max(H_l).value() << ", mean: " << average(H_l).value() << endl;
 	
 	volScalarField q_rad_M2 = R_ni - H_l;
-	Info << "Current q_rad_M2 [W/m²]: min = " << min(q_rad_M2).value() << ", max = " << max(q_rad_M2).value() << endl;
+	Info << "Current q_rad_M2 [W/m²]: min = " << min(q_rad_M2).value() << ", max = " << max(q_rad_M2).value() << ", mean: " << average(q_rad_M2).value() << endl;
 
 
 	Info<< "\nRESULTS\n" << endl;
 	/** ✅ Leaf energy balance equation - GLeaf [W/m²] */
     //GLeaf = q_rad_M1;
 	GLeaf = q_rad_validation;
-	//GLeaf = q_rad_M2;
-	
-	Info << "Current GLeaf [W/m²]: min = " << min(GLeaf).value() << ", max = " << max(GLeaf).value() << endl;
+	//GLeaf = q_rad_M2;	
+	Info << "Current GLeaf [W/m²]: min = " << min(GLeaf).value() << ", max = " << max(GLeaf).value() << ", mean: " << average(GLeaf).value() << endl;
 	
 	/** ✅ Density of net radiation - Ga [W/m³] */
 	Ga = Ga_validation;
-	Info << "Current Ga [W/m³]: min = " << min(Ga).value() << ", max = " << max(Ga).value() << endl;
+	Info << "Current Ga [W/m³]: min = " << min(Ga).value() << ", max = " << max(Ga).value() << ", mean: " << average(Ga).value() << endl;
 	
 	/** ✅ Shortwave net radiation - qr_sw [W/m²] */
 	qr_sw = Rs_transmitted_M1 - Rs_reflected_M1;
 	//qr_sw = G_ - Rs_transmitted_M2 - Rs_reflected_M2;
-	Info << "Current qr_sw [W/m²]: min = " << min(qr_sw).value() << ", max = " << max(qr_sw).value() << endl;
+	Info << "Current qr_sw [W/m²]: min = " << min(qr_sw).value() << ", max = " << max(qr_sw).value() << ", mean: " << average(qr_sw).value() << endl;
 	
 	/** ✅ Longwave net radiation - qr_lw [W/m²] */	
 	//qr_lw = RL_absorbed_Sky_M1;
 	qr_lw = RL_absorbed_Sky_validation;
 	//qr_lw = RL_absorbed_Sky_M2 - RL_emitted_M2;
-	Info << "Current qr_lw [W/m²]: min = " << min(qr_lw).value() << ", max = " << max(qr_lw).value() << endl;
+	Info << "Current qr_lw [W/m²]: min = " << min(qr_lw).value() << ", max = " << max(qr_lw).value() << ", mean: " << average(qr_lw).value() << endl;
 	
     Foam::word fieldNameGLeaf("GLeaf");
 	Foam::word fieldNameqr_sw("qr_sw");

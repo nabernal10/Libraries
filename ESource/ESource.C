@@ -193,13 +193,14 @@ void Foam::fv::ESource::addSup
 		
 		/** Sensible heat flux from the leaf - qPlantSen [W/m²] */
 		volScalarField qPlantSen = h_ch * (TLeaf - T);
-		Info << "Current qPlantSen: min = " << min(qPlantSen).value() << ", max = " << max(qPlantSen).value() << endl;
+		Info << "Current qPlantSen: min = " << min(qPlantSen).value() << ", max = " << max(qPlantSen).value() << ", mean: " << average(qPlantSen).value() << endl;
 		
 		/** Temperature source term - ST [W/(m³·s)]*/
 		volScalarField ST = LAD * qPlantSen / (rho_ * Cp0_);
 		
 		// Add source term to equation		
 		eqn += ST;
+		Info << "Current TSource: min = " << min(ST).value() << ", max = " << max(ST).value() << ", mean: " << average(ST).value() << endl;
     }
 
 /**

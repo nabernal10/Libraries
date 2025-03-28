@@ -203,12 +203,11 @@ void Foam::fv::specHumSource::addSup
 		volScalarField g_vLeaf = qPlantLat / L_v_;
 		
 		/** Humidity ratio source term - Sw [kg_waterVapourMass / (kg_dryAirMass s)] */
-		volScalarField Sw = LAD * g_vLeaf / rho_;
-		Info << "Current specHumSource: min = " << min(Sw).value() << ", max = " << max(Sw).value() << endl;
+		volScalarField Sw = LAD * g_vLeaf / rho_;		
 		
 		// Add source term to equation	
 		eqn += Sw;
-		
+		Info << "Current specHumSource: min = " << min(Sw).value() << ", max = " << max(Sw).value() << ", mean: " << average(Sw).value() << endl;
     }
 
 /**

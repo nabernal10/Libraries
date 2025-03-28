@@ -73,7 +73,7 @@ Foam::fv::USource::USource
 )
 :
     fv::cellSetOption(name, modelType, dict, mesh),
-    C_d_(0.0)  /**< Drag coefficient Cd - [-] */
+    C_d_(0.0)  /**< Drag coefficient - Cd [-] */
 {
     read(dict);
 }
@@ -129,7 +129,23 @@ bool Foam::fv::USource::read(const dictionary& dict)
     {
         const dictionary& gProps = leafDict.subDict("leafProperties");
 
-        gProps.readIfPresent("C_d", C_d_);
+        if (gProps.found("CdCoeffs"))
+		{
+			const dictionary& CdDict = gProps.subDict("CdCoeffs");
+			if (CdDict.found(this->name()))
+			{
+				CdDict.lookup(this->name()) >> C_d_;
+				Info << "C_d from CdCoeffs[" << this->name() << "] = " << C_d_ << endl;
+			}
+			else
+			{
+				Info << "CdCoeffs: entry for " << this->name() << " not found. Using default.\n";
+			}
+		}
+		else
+		{
+			gProps.readIfPresent("C_d", C_d_); // fallback if no CdCoeffs
+		}
 
         Info << "🔵 Values after reading leafProperties:\n"
              << "C_d = " << C_d_ << "\n";
@@ -170,6 +186,21 @@ void Foam::fv::USource::addSup
 		
 		// Add source term to equation		
 		eqn -= SU;
+		
+		// This is only for printing the values to the console (debugging purposes)
+		volVectorField USource
+		(
+			IOobject
+			(
+				"USource",
+				mesh_.time().timeName(),
+				mesh_,
+				IOobject::NO_READ,
+				IOobject::AUTO_WRITE
+			),
+			rho_ * C_d_ * LAD * mag(U) * U / rho_
+		);
+		Info << "Current USource: min = " << min(mag(USource)).value() << ", max = " << max(mag(USource)).value() << ", mean = " << average(mag(USource)).value() << endl;
 }
 
 /**

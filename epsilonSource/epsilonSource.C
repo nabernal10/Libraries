@@ -132,7 +132,23 @@ bool Foam::fv::epsilonSource::read(const dictionary& dict)
     {
         const dictionary& gProps = leafDict.subDict("leafProperties");
 
-        gProps.readIfPresent("C_d", C_d_);
+        if (gProps.found("CdCoeffs"))
+		{
+			const dictionary& CdDict = gProps.subDict("CdCoeffs");
+			if (CdDict.found(this->name()))
+			{
+				CdDict.lookup(this->name()) >> C_d_;
+				Info << "C_d from CdCoeffs[" << this->name() << "] = " << C_d_ << endl;
+			}
+			else
+			{
+				Info << "CdCoeffs: entry for " << this->name() << " not found. Using default.\n";
+			}
+		}
+		else
+		{
+			gProps.readIfPresent("C_d", C_d_); // fallback if no CdCoeffs
+		}
         gProps.readIfPresent("betaP", betaP_);
         gProps.readIfPresent("betaD", betaD_);
 		gProps.readIfPresent("C4", C4_);
@@ -194,7 +210,26 @@ void Foam::fv::epsilonSource::addSup
 		
 		// Add source term to equation	
         eqn += Sε;
-    }
+
+		// This is only for printing the values to the console (debugging purposes)
+		volScalarField Sε_P = rho_ * C_d_ * LAD * betaP_ * C4_ * pow(mag(U),3)/k * (1 / rho_);
+		volScalarField Sε_D = rho_ *C_d_ * LAD * betaD_ * C5_ * mag(U) * (1 / rho_);
+
+		volScalarField εSource
+		(
+			IOobject
+			(
+				"εSource",
+				mesh_.time().timeName(),
+				mesh_,
+				IOobject::NO_READ,
+				IOobject::AUTO_WRITE
+			),
+			Sε_P * epsilon - Sε_D * epsilon
+		);
+		
+		Info << "Current εSource: min = " << min(mag(εSource)).value() << ", max = " << max(mag(εSource)).value() << ", mean = " << average(mag(εSource)).value() << endl;
+	}
 
 /**
  * Adds explicit contribution for incompressible flow (needed for fvOptions).

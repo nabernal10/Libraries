@@ -132,7 +132,23 @@ bool Foam::fv::kSource::read(const dictionary& dict)
     {
         const dictionary& gProps = leafDict.subDict("leafProperties");
 
-        gProps.readIfPresent("C_d", C_d_);
+        if (gProps.found("CdCoeffs"))
+		{
+			const dictionary& CdDict = gProps.subDict("CdCoeffs");
+			if (CdDict.found(this->name()))
+			{
+				CdDict.lookup(this->name()) >> C_d_;
+				Info << "C_d from CdCoeffs[" << this->name() << "] = " << C_d_ << endl;
+			}
+			else
+			{
+				Info << "CdCoeffs: entry for " << this->name() << " not found. Using default.\n";
+			}
+		}
+		else
+		{
+			gProps.readIfPresent("C_d", C_d_); // fallback if no CdCoeffs
+		}
         gProps.readIfPresent("betaP", betaP_);
         gProps.readIfPresent("betaD", betaD_);
 
@@ -186,7 +202,26 @@ void Foam::fv::kSource::addSup
 		
 		// Add source term to equation
 		eqn += Sk;
-    }
+		
+		// This is only for printing the values to the console (debugging purposes)
+		volScalarField Sk_P = rho_ * C_d_ * LAD * betaP_ * pow(mag(U), 3) * (1 / rho_);
+		volScalarField Sk_D = rho_ * C_d_ * LAD * betaD_ * mag(U) * (1 / rho_);
+
+		volScalarField kSource
+		(
+			IOobject
+			(
+				"kSource",
+				mesh_.time().timeName(),
+				mesh_,
+				IOobject::NO_READ,
+				IOobject::AUTO_WRITE
+			),
+			Sk_P - Sk_D * k
+		);
+		
+		Info << "Current kSource: min = " << min(mag(kSource)).value() << ", max = " << max(mag(kSource)).value() << ", mean = " << average(mag(kSource)).value() << endl;
+	}
 
 /**
  * Adds explicit contribution for incompressible flow (needed for fvOptions).
