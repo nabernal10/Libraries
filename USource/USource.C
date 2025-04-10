@@ -198,7 +198,7 @@ void Foam::fv::USource::addSup
 				IOobject::NO_READ,
 				IOobject::AUTO_WRITE
 			),
-			rho_ * C_d_ * LAD * mag(U) * U / rho_
+			- rho_ * C_d_ * LAD * mag(U) * U / rho_
 		);
 		Info << "Current USource: min = " << min(mag(USource)).value() << ", max = " << max(mag(USource)).value() << ", mean = " << average(mag(USource)).value() << endl;
 }

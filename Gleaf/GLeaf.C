@@ -322,7 +322,7 @@ bool Foam::functionObjects::GLeaf::execute()
 	Info<< "\nRADIATION MODEL 2\n" << endl;
 	/** RADIATION MODEL 2 */
 		
-	/** Reflected shortwave radiation - Rsᵣ [W/m²] */
+	/** Transmitted shortwave radiation - Rsᵣ [W/m²] */
     dimensionedScalar Rs_transmitted_M2 = G_ * taoLeaf_;
 	Info << "Rs_transmitted_M2 [W/m²] = " << Rs_transmitted_M2.value() << endl;
 	
