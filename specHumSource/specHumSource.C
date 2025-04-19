@@ -230,5 +230,4 @@ void Foam::fv::specHumSource::addSup
 {
     return this->addSup(volScalarField::null(), eqn, fieldi);
 }
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

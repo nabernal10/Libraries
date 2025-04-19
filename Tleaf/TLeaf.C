@@ -394,5 +394,4 @@ bool Foam::functionObjects::TLeaf::write()
 {
     return writeObject("TLeaf") && writeObject("g_vLeaf") && writeObject("r_s") && writeObject("r_a") && writeObject("qPlantLat");
 }
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

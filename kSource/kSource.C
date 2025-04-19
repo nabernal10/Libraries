@@ -195,13 +195,13 @@ void Foam::fv::kSource::addSup
 			- fvm::Sp(rho_ * C_d_ * LAD * betaD_ * mag(U) * (1 / rho_), k)
 		);
 		
-		fvMatrix<scalar> Sk
+		fvMatrix<scalar> Sk_total
 		(
 			Sk_production + Sk_dissipation
 		);
 		
 		// Add source term to equation
-		eqn += Sk;
+		eqn += Sk_total;
 		
 		// This is only for printing the values to the console (debugging purposes)
 		volScalarField Sk_P = rho_ * C_d_ * LAD * betaP_ * pow(mag(U), 3) * (1 / rho_);
@@ -243,4 +243,4 @@ void Foam::fv::kSource::addSup
 {
     return this->addSup(volScalarField::null(), eqn, fieldi);
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

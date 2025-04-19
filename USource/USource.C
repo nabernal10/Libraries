@@ -174,18 +174,16 @@ void Foam::fv::USource::addSup
 {
 		Info << "🔵 USource::addSup() applying source in the scalar field U" << endl;
 		
-		const volScalarField& rho_ = mesh_.lookupObject<volScalarField>("rho");		
 		const volVectorField& U = eqn.psi();
+		const volScalarField& rho_ = mesh_.lookupObject<volScalarField>("rho");		
 		const volScalarField& LAD = mesh_.lookupObject<volScalarField>("LAD");
-
-		// Source term for momentum equation [N/m³] * (1 / rho_)
-		fvMatrix<vector> SU
-		(
-			fvm::Sp(rho_ * C_d_ * LAD * mag(U) * (1 / rho_), U)
-		);
 		
-		// Add source term to equation		
-		eqn -= SU;
+		// Source term for momentum equation [N/m³]	
+		volScalarField linearDragCoeff = C_d_ * LAD * mag(U);		
+		
+		// Add source term to equation
+		eqn -= fvm::Sp(linearDragCoeff, U); //eqn -= fvm::SuSp(linearDragCoeff, U);
+
 		
 		// This is only for printing the values to the console (debugging purposes)
 		volVectorField USource
@@ -198,9 +196,10 @@ void Foam::fv::USource::addSup
 				IOobject::NO_READ,
 				IOobject::AUTO_WRITE
 			),
-			- rho_ * C_d_ * LAD * mag(U) * U / rho_
+				rho_ * C_d_ * LAD * mag(U) * U / rho_ * (-1)
 		);
 		Info << "Current USource: min = " << min(mag(USource)).value() << ", max = " << max(mag(USource)).value() << ", mean = " << average(mag(USource)).value() << endl;
+		Info << "Current linearDragCoeff: min = " << min(mag(linearDragCoeff)).value() << ", max = " << max(mag(linearDragCoeff)).value() << ", mean = " << average(mag(linearDragCoeff)).value() << endl;
 }
 
 /**
@@ -224,4 +223,4 @@ void Foam::fv::USource::addSup //(Para que fvOptions detecte USource)
 {
     return this->addSup(volScalarField::null(), eqn, fieldi);
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

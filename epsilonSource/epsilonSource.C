@@ -203,13 +203,13 @@ void Foam::fv::epsilonSource::addSup
 			fvm::Sp(- rho_ *C_d_ * LAD * betaD_ * C5_ * mag(U) * (1 / rho_), epsilon)
 		);
 		
-        fvMatrix<scalar> Sε
+        fvMatrix<scalar> Sε_total
         (
 			Sε_production + Sε_dissipation
 		);
 		
 		// Add source term to equation	
-        eqn += Sε;
+        eqn += Sε_total;
 
 		// This is only for printing the values to the console (debugging purposes)
 		volScalarField Sε_P = rho_ * C_d_ * LAD * betaP_ * C4_ * pow(mag(U),3)/k * (1 / rho_);
